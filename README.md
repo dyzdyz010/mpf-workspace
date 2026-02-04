@@ -1,97 +1,100 @@
 # MPF 开发工作区
 
-本仓库用于协调 MPF (Modular Plugin Framework) 多仓库开发。
+用于 MPF (Modular Plugin Framework) 多仓库开发的统一环境。
 
 ## 快速开始
-
-### 1. 设置开发环境
 
 ```bash
 # 克隆工作区
 git clone https://github.com/dyzdyz010/mpf-workspace.git
 cd mpf-workspace
 
-# 下载所有依赖 (需要 GitHub CLI)
-./scripts/setup-dev.sh          # Linux
-./scripts/setup-dev.sh windows  # Windows
+# 设置开发环境 (下载 SDK、库、Host)
+./scripts/setup-dev.sh              # Linux
+./scripts/setup-dev.sh windows      # Windows
+./scripts/setup-dev.sh --bundle     # 或从完整包下载
 ```
 
-### 2. 开发你的插件
+## 开发插件
+
+### 方式 1: 使用工具链文件 (推荐)
 
 ```bash
-# 克隆你的插件仓库 (以 orders 为例)
-git clone https://github.com/dyzdyz010/mpf-plugin-orders.git
-cd mpf-plugin-orders
-
-# 配置并构建
-cmake -B build \
-  -DCMAKE_PREFIX_PATH="$PWD/../deps/mpf-sdk;$PWD/../deps/mpf-http-client;$PWD/../deps/mpf-ui-components" \
-  -DCMAKE_INSTALL_PREFIX="$PWD/../plugins/orders"
-
+cd your-plugin
+cmake -B build -DCMAKE_TOOLCHAIN_FILE=../mpf-dev.cmake
 cmake --build build
-cmake --install build
+cmake --install build  # 自动安装到 workspace/plugins/your-plugin
 ```
 
-### 3. 测试插件
+### 方式 2: 手动指定路径
 
 ```bash
-# 回到工作区
-cd ..
-
-# 运行 Host
-./scripts/run-host.sh
-
-# 或者直接指定配置
-./deps/mpf-host/bin/mpf-host --config ./config/paths.json
+cmake -B build \
+  -DCMAKE_PREFIX_PATH="../deps/mpf-sdk;../deps/mpf-http-client;../deps/mpf-ui-components" \
+  -DCMAKE_INSTALL_PREFIX="../plugins/your-plugin"
 ```
+
+## 测试插件
+
+```bash
+# 运行 Host (自动加载 plugins/ 下的插件)
+./scripts/run-host.sh
+```
+
+## 下载的内容
+
+| 组件 | 包含内容 | 用途 |
+|------|----------|------|
+| **mpf-sdk** | 头文件 + CMake 配置 | 编译插件必需 |
+| **mpf-http-client** | 头文件 + 库 + CMake 配置 | 需要 HTTP 功能时 |
+| **mpf-ui-components** | 头文件 + 库 + QML + CMake 配置 | 需要 UI 组件时 |
+| **mpf-host** | 可执行文件 + Qt 插件 | 运行测试 |
 
 ## 目录结构
 
 ```
 mpf-workspace/
 ├── scripts/
-│   ├── setup-dev.sh     # 下载依赖脚本
-│   └── run-host.sh      # 运行 Host 脚本
-├── deps/                # 下载的预构建组件
+│   ├── setup-dev.sh     # 环境设置脚本
+│   └── run-host.sh      # 运行 Host
+├── deps/                # 下载的组件
 │   ├── mpf-sdk/
+│   │   ├── include/     # 头文件
+│   │   └── lib/cmake/   # CMake 配置
 │   ├── mpf-http-client/
 │   ├── mpf-ui-components/
 │   └── mpf-host/
-├── plugins/             # 本地构建的插件
-│   ├── orders/
-│   └── rules/
-└── config/
-    └── paths.json       # 插件路径配置
+│       └── bin/         # 可执行文件
+├── plugins/             # 你的插件 (构建输出)
+├── config/
+│   └── paths.json       # 运行时配置
+└── mpf-dev.cmake        # CMake 工具链文件
 ```
 
-## 各组件仓库
+## 仓库列表
 
-| 仓库 | 说明 | 依赖 |
-|------|------|------|
-| [mpf-sdk](https://github.com/dyzdyz010/mpf-sdk) | 核心接口定义 | - |
-| [mpf-http-client](https://github.com/dyzdyz010/mpf-http-client) | HTTP 客户端库 | SDK |
-| [mpf-ui-components](https://github.com/dyzdyz010/mpf-ui-components) | UI 组件库 | SDK |
-| [mpf-host](https://github.com/dyzdyz010/mpf-host) | 宿主应用 | SDK, HTTP, UI |
-| [mpf-plugin-orders](https://github.com/dyzdyz010/mpf-plugin-orders) | 订单插件示例 | SDK, HTTP, UI |
-| [mpf-plugin-rules](https://github.com/dyzdyz010/mpf-plugin-rules) | 规则插件示例 | SDK |
-
-## 环境变量
-
-| 变量 | 说明 |
+| 仓库 | 说明 |
 |------|------|
-| `MPF_SDK` | SDK 安装路径 |
-| `MPF_CONFIG_PATH` | 配置文件目录 |
-| `QT_QPA_PLATFORM` | Qt 平台插件 (Linux: xcb, 无头: offscreen) |
+| [mpf-sdk](https://github.com/dyzdyz010/mpf-sdk) | 核心 SDK |
+| [mpf-http-client](https://github.com/dyzdyz010/mpf-http-client) | HTTP 客户端 |
+| [mpf-ui-components](https://github.com/dyzdyz010/mpf-ui-components) | UI 组件 |
+| [mpf-host](https://github.com/dyzdyz010/mpf-host) | 宿主程序 |
+| [mpf-plugin-orders](https://github.com/dyzdyz010/mpf-plugin-orders) | 示例: 订单插件 |
+| [mpf-plugin-rules](https://github.com/dyzdyz010/mpf-plugin-rules) | 示例: 规则插件 |
+| [mpf-release](https://github.com/dyzdyz010/mpf-release) | 完整发布包 |
 
-## 常见问题
+## Qt Creator 调试
 
-### Q: 插件加载失败
-检查 `paths.json` 中的路径是否正确，确保插件 .so/.dll 文件存在。
+1. File → Open Project → 选择你的插件 CMakeLists.txt
+2. Projects → Run → Executable: `workspace/deps/mpf-host/bin/mpf-host`
+3. Projects → Run → Working directory: `workspace/`
+4. F5 开始调试
 
-### Q: 找不到 Qt 库
-确保 Qt 6.8+ 已安装，`QT_ROOT_DIR` 环境变量正确设置。
+## CI/CD
 
-### Q: 如何调试插件
-1. 使用 Qt Creator 打开插件项目
-2. 设置可执行文件为 `deps/mpf-host/bin/mpf-host`
-3. 设置工作目录为 workspace 根目录
+各组件仓库的 CI 会自动:
+1. 构建 Linux + Windows
+2. 发布到 GitHub Releases
+3. (可选) 触发下游仓库构建
+
+依赖链: SDK → http-client/ui-components → host → plugins → release
