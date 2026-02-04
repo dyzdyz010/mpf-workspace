@@ -83,6 +83,40 @@ mpf-workspace/
 | [mpf-plugin-rules](https://github.com/dyzdyz010/mpf-plugin-rules) | 示例: 规则插件 |
 | [mpf-release](https://github.com/dyzdyz010/mpf-release) | 完整发布包 |
 
+## 组件开发者 (SDK/库)
+
+开发 mpf-sdk、http-client、ui-components 时，需要从源码构建验证：
+
+```bash
+# 克隆并构建所有组件 (按依赖顺序)
+./scripts/setup-dev-full.sh
+
+# 目录结构
+# src/           - 所有组件源码
+# build/         - 构建目录
+# local/         - 本地安装 (bin, lib, include)
+
+# 修改 SDK 后重新构建
+cd src/mpf-sdk
+# ... 修改代码 ...
+cd ../../
+./scripts/setup-dev-full.sh --rebuild mpf-sdk
+
+# 测试 (使用本地构建的所有组件)
+./run-local.sh
+```
+
+### 依赖顺序
+
+```
+mpf-sdk (无依赖)
+    ↓
+mpf-http-client ──┬── mpf-host ──→ mpf-plugin-orders
+mpf-ui-components ─┘              mpf-plugin-rules
+```
+
+修改上游组件后，需要重新构建所有下游组件。
+
 ## Qt Creator 调试
 
 1. File → Open Project → 选择你的插件 CMakeLists.txt
